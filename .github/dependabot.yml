@@ -1,0 +1,75 @@
+# Dependabot configuration for the devops-platform repo.
+#
+# Keeps GitHub Actions pinned to commit SHAs and Terraform provider versions
+# up to date automatically. Minor/patch updates are grouped to reduce PR noise;
+# major version bumps stay separate so they can be reviewed individually.
+
+version: 2
+
+updates:
+  # ── GitHub Actions (root .github/workflows/) ────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "chore(deps):"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    # Majors are intentionally excluded from the group so they land as
+    # individual PRs for manual review of breaking-change release notes.
+
+  # ── Terraform — repo root ────────────────────────────────────────────────────
+  - package-ecosystem: "terraform"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps):"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ── Terraform — b1c-secure-bucket ───────────────────────────────────────────
+  - package-ecosystem: "terraform"
+    directory: "/modules/b1c-secure-bucket"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps):"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ── Terraform — b1c-serverless-api ──────────────────────────────────────────
+  - package-ecosystem: "terraform"
+    directory: "/modules/b1c-serverless-api"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps):"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ── Terraform — b1c-aurora-cluster ──────────────────────────────────────────
+  - package-ecosystem: "terraform"
+    directory: "/modules/b1c-aurora-cluster"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps):"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"

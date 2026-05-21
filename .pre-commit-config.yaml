@@ -1,0 +1,85 @@
+---
+# pre-commit configuration for devops-platform
+#
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+#
+# SHAs are pinned to the exact commit for supply-chain security. Dependabot
+# will open PRs to update these when new releases are tagged.
+
+repos:
+  # ---------------------------------------------------------------------------
+  # General file hygiene
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0 # 2024-03-21
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-added-large-files
+        args: [--maxkb=500]
+
+  # ---------------------------------------------------------------------------
+  # Terraform: format, validate, lint, docs, security
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.96.0 # 2024-11-01
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_validate
+        args:
+          - --args=-no-color
+      - id: terraform_tflint
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+      - id: terraform_docs
+        args:
+          - --args=--config=.terraform-docs.yml
+      - id: terraform_trivy
+        args:
+          - --args=--skip-dirs="**/.terraform"
+
+  # ---------------------------------------------------------------------------
+  # Secret scanning
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4 # 2024-09-10
+    hooks:
+      - id: gitleaks
+
+  # ---------------------------------------------------------------------------
+  # Local guards — enforce repo-wide conventions
+  # ---------------------------------------------------------------------------
+  - repo: local
+    hooks:
+      # Fail if any file under modules/ contains a backend{} block.
+      # Modules must be backend-free; consumers configure state at the root.
+      - id: no-backend-in-modules
+        name: "No backend block in modules"
+        language: pygrep
+        entry: '^\s*backend\s'
+        files: '^modules/.*\.tf$'
+        args: [--negate]  # fail when the pattern IS found
+
+      # Fail if any workflow in .github/workflows/ uses a reusable workflow
+      # reference that is not pinned to a full 40-character commit SHA.
+      # This applies to lines of the form:
+      #   uses: owner/repo/.github/workflows/foo.yml@<ref>
+      # where <ref> must be exactly 40 hex characters.
+      #
+      # NOTE: caller workflows under examples/*/.github/workflows/ are
+      # intentionally exempt (they are documentation examples, not production
+      # workflows), and the pattern below is scoped to .github/workflows/ only.
+      - id: workflows-pinned-to-sha
+        name: "Reusable workflow refs must be pinned to 40-char SHA"
+        language: pygrep
+        # Match any non-comment uses: line whose ref is NOT a 40-hex-char SHA.
+        # Lines that end with @<40 hex chars> are allowed; everything else fails.
+        # Comments (lines starting with optional whitespace then #) are exempt
+        # so that top-of-file documentation showing example caller workflows
+        # (which use tag refs like @v0.1.0) does not trip the hook.
+        entry: '^\s*-?\s*uses:\s*\S+@(?![a-f0-9]{40}($|\s|#))'
+        files: '^\.github/workflows/.*\.ya?ml$'

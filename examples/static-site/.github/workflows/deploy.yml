@@ -1,0 +1,48 @@
+# Caller workflow: deploy the example static site to S3 + CloudFront.
+#
+# This workflow calls the reusable aws-static-site.yml from this repo.
+# The S3 bucket and CloudFront distribution must already exist (created by
+# terraform apply in this directory).
+#
+# How to supply bucket_name and cloudfront_distribution_id:
+#   After running terraform apply, capture the outputs and make them available
+#   to this workflow. Recommended approaches (in order of preference):
+#     1. Store as GitHub Actions variables (Settings > Variables) after apply.
+#     2. Fetch via Terraform Cloud / HCP Terraform API in a prior job step.
+#     3. Commit a non-sensitive outputs file (e.g. infra-outputs.json) and
+#        read it in a prior step, then pass as job outputs.
+#
+# Required GitHub Actions secret:
+#   AWS_DEPLOY_ROLE_ARN -- ARN of the IAM role GitHub Actions assumes via OIDC.
+#
+# Required GitHub Actions variables:
+#   STATIC_SITE_BUCKET_NAME       -- S3 bucket name (from terraform output bucket_name)
+#   STATIC_SITE_DISTRIBUTION_ID   -- CloudFront distribution ID (from terraform output cloudfront_distribution_id)
+#
+# NOTE: The uses: line below references @main for simplicity in this example.
+# In production, pin to a specific release tag or commit SHA:
+#   uses: B1Codes/devops-platform/.github/workflows/aws-static-site.yml@v0.1.0
+
+name: Deploy example-static-site
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "examples/static-site/site/**"
+      - "examples/static-site/.github/workflows/deploy.yml"
+
+jobs:
+  deploy:
+    name: Deploy Static Site
+    uses: B1Codes/devops-platform/.github/workflows/aws-static-site.yml@main
+    with:
+      build_command: echo 'static -- no build step'
+      build_output_dir: ./examples/static-site/site
+      bucket_name: ${{ vars.STATIC_SITE_BUCKET_NAME }}
+      cloudfront_distribution_id: ${{ vars.STATIC_SITE_DISTRIBUTION_ID }}
+      aws_region: us-east-1
+      wait_for_invalidation: true
+    secrets:
+      role_to_assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}

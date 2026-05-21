@@ -1,0 +1,36 @@
+# Caller workflow: deploy the example-python-api Lambda on every push to main.
+#
+# This workflow calls the reusable aws-lambda-deploy.yml from this repo.
+# The Lambda function must already exist in AWS (created by terraform apply).
+#
+# Required GitHub Actions secret in this repo:
+#   AWS_DEPLOY_ROLE_ARN -- ARN of the IAM role GitHub Actions assumes via OIDC.
+#                          See docs/PREREQUISITES.md for setup instructions.
+#
+# NOTE: The uses: line below references @main for simplicity in this example.
+# In production, pin to a specific release tag or commit SHA:
+#   uses: B1Codes/devops-platform/.github/workflows/aws-lambda-deploy.yml@v0.1.0
+#   or a full 40-char commit SHA for maximum supply-chain security.
+
+name: Deploy example-python-api
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "examples/lambda-python/src/**"
+      - "examples/lambda-python/.github/workflows/deploy.yml"
+
+jobs:
+  deploy:
+    name: Deploy Lambda
+    uses: B1Codes/devops-platform/.github/workflows/aws-lambda-deploy.yml@main
+    with:
+      function_name: example-python-api
+      aws_region: us-east-1
+      runtime: python
+      runtime_version: "3.12"
+      source_dir: examples/lambda-python/src
+    secrets:
+      role_to_assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}

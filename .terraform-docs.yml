@@ -1,0 +1,35 @@
+---
+# terraform-docs configuration
+#
+# Used by pre-commit-terraform's terraform_docs hook and by CI to auto-generate
+# module documentation. Run manually:
+#   terraform-docs markdown table --config .terraform-docs.yml modules/b1c-secure-bucket
+#
+# The inject output mode reads the existing README.md and replaces the content
+# between the BEGIN_TF_DOCS / END_TF_DOCS markers, leaving all other README
+# content untouched.
+
+formatter: "markdown table"
+
+output:
+  file: README.md
+  mode: inject
+  template: |-
+    <!-- BEGIN_TF_DOCS -->
+    {{ .Content }}
+    <!-- END_TF_DOCS -->
+
+sort:
+  enabled: true
+  by: name
+
+settings:
+  anchor: true
+  color: true
+  default: true
+  description: true
+  escape: true
+  indent: 2
+  required: true
+  sensitive: true
+  type: true

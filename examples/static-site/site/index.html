@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>devops-platform</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --color-bg:        #0d1117;
+      --color-surface:   #161b22;
+      --color-border:    #30363d;
+      --color-accent:    #58a6ff;
+      --color-accent-2:  #3fb950;
+      --color-text:      #e6edf3;
+      --color-muted:     #8b949e;
+      --font-mono:       "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      --font-sans:       -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      --radius:          8px;
+      --max-width:       760px;
+    }
+
+    html, body {
+      height: 100%;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: var(--max-width);
+    }
+
+    /* ---- Header ---- */
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-accent-2);
+      border: 1px solid var(--color-accent-2);
+      border-radius: 2rem;
+      padding: 0.2rem 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--color-text);
+      margin-bottom: 0.75rem;
+    }
+
+    h1 span {
+      color: var(--color-accent);
+    }
+
+    .subtitle {
+      font-size: 1.05rem;
+      color: var(--color-muted);
+      max-width: 540px;
+      margin: 0 auto;
+    }
+
+    /* ---- Feature grid ---- */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+    }
+
+    .card-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .card h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+      color: var(--color-text);
+    }
+
+    .card p {
+      font-size: 0.85rem;
+      color: var(--color-muted);
+    }
+
+    /* ---- Code block ---- */
+    .codeblock {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .codeblock-label {
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      color: var(--color-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.75rem;
+    }
+
+    pre {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--color-accent);
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.7;
+    }
+
+    /* ---- Footer ---- */
+    footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--color-muted);
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--color-border);
+    }
+
+    footer a {
+      color: var(--color-accent);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 500px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="badge">devops-platform</span>
+      <h1>Hello from <span>devops-platform</span></h1>
+      <p class="subtitle">
+        A standardized, secure deployment engine for AWS workloads.
+        Reusable Terraform modules and GitHub Actions workflows,
+        built on the Golden Path methodology.
+      </p>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <span class="card-icon" aria-hidden="true">[S3]</span>
+        <h2>Secure Object Storage</h2>
+        <p>
+          This page is served from a private S3 bucket with SSE encryption
+          and all public-access controls enabled.
+        </p>
+      </div>
+      <div class="card">
+        <span class="card-icon" aria-hidden="true">[CF]</span>
+        <h2>CloudFront Distribution</h2>
+        <p>
+          Delivered via CloudFront using Origin Access Control (OAC),
+          HTTPS enforced, with edge caching for low-latency delivery.
+        </p>
+      </div>
+      <div class="card">
+        <span class="card-icon" aria-hidden="true">[TF]</span>
+        <h2>Terraform Provisioned</h2>
+        <p>
+          All infrastructure was created with the
+          <code>b1c-secure-bucket</code> module and a CloudFront
+          distribution defined in <code>examples/static-site/main.tf</code>.
+        </p>
+      </div>
+      <div class="card">
+        <span class="card-icon" aria-hidden="true">[GH]</span>
+        <h2>OIDC Deployments</h2>
+        <p>
+          Site content is deployed via the reusable
+          <code>aws-static-site.yml</code> workflow using AWS OIDC
+          authentication. No static credentials.
+        </p>
+      </div>
+    </div>
+
+    <div class="codeblock">
+      <div class="codeblock-label">Quick deploy command</div>
+      <pre>git clone https://github.com/B1Codes/devops-platform
+cd devops-platform/examples/static-site
+terraform init &amp;&amp; terraform apply</pre>
+    </div>
+
+    <footer>
+      Deployed with
+      <a href="https://github.com/B1Codes/devops-platform" target="_blank" rel="noopener noreferrer">
+        B1Codes/devops-platform
+      </a>
+      &mdash; Golden Path infrastructure for AWS.
+    </footer>
+  </div>
+</body>
+</html>

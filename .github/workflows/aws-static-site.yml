@@ -1,0 +1,145 @@
+# Reusable workflow: aws-static-site.yml
+#
+# Builds a static site (React, Vue, plain HTML, etc.), syncs the output to S3,
+# and invalidates the CloudFront distribution.
+#
+# Usage: call this workflow with `uses:` from a consumer repo:
+#   jobs:
+#     deploy:
+#       uses: B1Codes/devops-platform/.github/workflows/aws-static-site.yml@v0.1.0
+#       with:
+#         build_command: npm run build
+#         build_output_dir: dist/
+#         bucket_name: my-site-prod
+#         cloudfront_distribution_id: EXXXXXXXXXXXXXXX
+#         aws_region: us-east-1
+#       secrets:
+#         role_to_assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+
+on:
+  workflow_call:
+    inputs:
+      build_command:
+        description: "Shell command used to build the site (e.g. 'npm run build')."
+        required: true
+        type: string
+      build_output_dir:
+        description: "Directory produced by the build command that should be synced to S3."
+        required: true
+        type: string
+      bucket_name:
+        description: "Name of the S3 bucket to sync the built site into."
+        required: true
+        type: string
+      cloudfront_distribution_id:
+        description: "ID of the CloudFront distribution to invalidate after deployment."
+        required: true
+        type: string
+      aws_region:
+        description: "AWS region where the S3 bucket and CloudFront distribution live."
+        required: true
+        type: string
+      node_version:
+        description: "Node.js version to install for the build step."
+        required: false
+        type: string
+        default: "20"
+      wait_for_invalidation:
+        description: "Wait for the CloudFront invalidation to reach Completed status before finishing. Adds ~2-5 min of CI time."
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      role_to_assume:
+        description: "ARN of the IAM role to assume via OIDC for AWS authentication."
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy static site to S3 + CloudFront
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@0a44ba7841725637a19e28fa30b79a866c81b0a6 # v4.0.4
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: "npm"
+
+      # ── Install dependencies ─────────────────────────────────────────────────
+      - name: Install npm dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f "package-lock.json" ]]; then
+            echo "Found package-lock.json — using 'npm ci'."
+            npm ci
+          else
+            echo "No package-lock.json — using 'npm install'."
+            npm install
+          fi
+
+      # ── Build ────────────────────────────────────────────────────────────────
+      - name: Build site
+        env:
+          BUILD_CMD: ${{ inputs.build_command }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval "${BUILD_CMD}"
+
+      # ── AWS auth ─────────────────────────────────────────────────────────────
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          role-to-assume: ${{ secrets.role_to_assume }}
+          aws-region: ${{ inputs.aws_region }}
+
+      # ── Sync to S3 ───────────────────────────────────────────────────────────
+      - name: Sync to S3
+        env:
+          BUILD_OUTPUT_DIR: ${{ inputs.build_output_dir }}
+          BUCKET_NAME: ${{ inputs.bucket_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          aws s3 sync "${BUILD_OUTPUT_DIR}" "s3://${BUCKET_NAME}" --delete
+          echo "Sync to s3://${BUCKET_NAME} complete."
+
+      # ── CloudFront invalidation ──────────────────────────────────────────────
+      - name: Create CloudFront invalidation
+        id: invalidation
+        env:
+          DISTRIBUTION_ID: ${{ inputs.cloudfront_distribution_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          INVALIDATION_ID=$(aws cloudfront create-invalidation \
+            --distribution-id "${DISTRIBUTION_ID}" \
+            --paths "/*" \
+            --output text \
+            --query 'Invalidation.Id')
+          echo "invalidation_id=${INVALIDATION_ID}" >> "${GITHUB_OUTPUT}"
+          echo "CloudFront invalidation ${INVALIDATION_ID} created for distribution ${DISTRIBUTION_ID}."
+
+      - name: Wait for CloudFront invalidation to complete
+        if: inputs.wait_for_invalidation == true
+        env:
+          DISTRIBUTION_ID: ${{ inputs.cloudfront_distribution_id }}
+          INVALIDATION_ID: ${{ steps.invalidation.outputs.invalidation_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Waiting for invalidation ${INVALIDATION_ID} to complete (this may take a few minutes)..."
+          aws cloudfront wait invalidation-completed \
+            --distribution-id "${DISTRIBUTION_ID}" \
+            --id "${INVALIDATION_ID}"
+          echo "Invalidation complete."

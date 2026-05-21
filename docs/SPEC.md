@@ -11,7 +11,7 @@ To provide a standardized, secure, and "agent-friendly" deployment engine for B1
 - **Cloud:** AWS (Lambda, App Runner, S3, CloudFront, Aurora Serverless)
 
 ## 3. Architecture: The Reusable Workflow
-All B1Codes projects must call workflows defined in this repository. 
+All B1Codes projects must call workflows defined in this repository.
 - **Location:** `.github/workflows/`
 - **Standard Workflows:**
     - `aws-lambda-deploy.yml`: Packages Python/Node and deploys to AWS Lambda.

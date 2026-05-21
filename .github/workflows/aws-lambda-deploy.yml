@@ -1,0 +1,158 @@
+# Reusable workflow: aws-lambda-deploy.yml
+#
+# Packages a Python or Node Lambda function from source, uploads the ZIP via
+# OIDC-authenticated AWS credentials, and waits for the update to complete.
+#
+# Usage: call this workflow with `uses:` from a consumer repo:
+#   jobs:
+#     deploy:
+#       uses: B1Codes/devops-platform/.github/workflows/aws-lambda-deploy.yml@v0.1.0
+#       with:
+#         function_name: my-app-prod
+#         aws_region: us-east-1
+#         runtime: python
+#         source_dir: src/
+#       secrets:
+#         role_to_assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+
+on:
+  workflow_call:
+    inputs:
+      function_name:
+        description: "Name of the Lambda function to update."
+        required: true
+        type: string
+      aws_region:
+        description: "AWS region where the Lambda function lives (e.g. us-east-1)."
+        required: true
+        type: string
+      runtime:
+        description: "Language runtime. Must be 'python' or 'node'."
+        required: true
+        type: string
+      source_dir:
+        description: "Path to the directory containing the Lambda source code."
+        required: true
+        type: string
+      runtime_version:
+        description: "Runtime version to install. Defaults to '3.12' for python and '20' for node."
+        required: false
+        type: string
+        default: ""
+      dependency_install_command:
+        description: "Optional shell command to install dependencies into source_dir before zipping (e.g. 'pip install -r requirements.txt -t .')."
+        required: false
+        type: string
+        default: ""
+    secrets:
+      role_to_assume:
+        description: "ARN of the IAM role to assume via OIDC for AWS authentication."
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy Lambda — ${{ inputs.function_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Validate runtime input
+        env:
+          INPUT_RUNTIME: ${{ inputs.runtime }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${INPUT_RUNTIME}" != "python" && "${INPUT_RUNTIME}" != "node" ]]; then
+            echo "::error::Invalid 'runtime' input: '${INPUT_RUNTIME}'. Must be 'python' or 'node'."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      # ── Python runtime setup ─────────────────────────────────────────────────
+      - name: Set up Python
+        if: inputs.runtime == 'python'
+        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
+        with:
+          # Inline expression here is safe: workflow_call inputs cannot be attacker-controlled
+          # in the same way as event payloads; they are validated above.
+          python-version: ${{ inputs.runtime_version != '' && inputs.runtime_version || '3.12' }}
+
+      # ── Node runtime setup ───────────────────────────────────────────────────
+      - name: Set up Node
+        if: inputs.runtime == 'node'
+        uses: actions/setup-node@0a44ba7841725637a19e28fa30b79a866c81b0a6 # v4.0.4
+        with:
+          node-version: ${{ inputs.runtime_version != '' && inputs.runtime_version || '20' }}
+
+      # ── Optional dependency installation ────────────────────────────────────
+      - name: Install dependencies
+        if: inputs.dependency_install_command != ''
+        env:
+          SOURCE_DIR: ${{ inputs.source_dir }}
+          DEP_CMD: ${{ inputs.dependency_install_command }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${SOURCE_DIR}"
+          eval "${DEP_CMD}"
+
+      # ── Package ─────────────────────────────────────────────────────────────
+      - name: Zip source directory
+        env:
+          SOURCE_DIR: ${{ inputs.source_dir }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${SOURCE_DIR}"
+          zip -r "${GITHUB_WORKSPACE}/function.zip" .
+          echo "Archive size: $(du -sh "${GITHUB_WORKSPACE}/function.zip" | cut -f1)"
+
+      # ── AWS auth ─────────────────────────────────────────────────────────────
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          role-to-assume: ${{ secrets.role_to_assume }}
+          aws-region: ${{ inputs.aws_region }}
+
+      # ── Deploy ───────────────────────────────────────────────────────────────
+      - name: Update Lambda function code
+        id: update_code
+        env:
+          FUNCTION_NAME: ${{ inputs.function_name }}
+          AWS_REGION_INPUT: ${{ inputs.aws_region }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          aws lambda update-function-code \
+            --function-name "${FUNCTION_NAME}" \
+            --zip-file fileb://"${GITHUB_WORKSPACE}/function.zip" \
+            --publish \
+            --output json \
+            | tee /tmp/update-result.json
+          VERSION=$(jq -r '.Version' /tmp/update-result.json)
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Wait for update to complete
+        env:
+          FUNCTION_NAME: ${{ inputs.function_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          aws lambda wait function-updated \
+            --function-name "${FUNCTION_NAME}"
+
+      - name: Report deployed version
+        env:
+          FUNCTION_NAME: ${{ inputs.function_name }}
+          DEPLOYED_VERSION: ${{ steps.update_code.outputs.version }}
+          REGION: ${{ inputs.aws_region }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Lambda '${FUNCTION_NAME}' updated to version ${DEPLOYED_VERSION} in ${REGION}."

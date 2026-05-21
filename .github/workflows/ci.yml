@@ -1,0 +1,135 @@
+# CI workflow for the devops-platform repo itself.
+#
+# Triggers on push to main and on all pull requests.
+# Validates Terraform formatting and module correctness, lints workflows,
+# and optionally checks Markdown.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Terraform formatting ─────────────────────────────────────────────────────
+  terraform-fmt:
+    name: Terraform format check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.1
+        with:
+          terraform_version: "1.9.5"
+          terraform_wrapper: false
+
+      - name: Check Terraform formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          terraform fmt -check -recursive
+          echo "All Terraform files are correctly formatted."
+
+  # ── Terraform validate (matrix over each module) ─────────────────────────────
+  terraform-validate:
+    name: Terraform validate — ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - module: modules/b1c-secure-bucket
+          - module: modules/b1c-serverless-api
+          - module: modules/b1c-aurora-cluster
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.1
+        with:
+          terraform_version: "1.9.5"
+          terraform_wrapper: false
+
+      - name: Terraform init (no backend)
+        env:
+          MODULE_DIR: ${{ matrix.module }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          terraform -chdir="${MODULE_DIR}" init -backend=false -input=false
+
+      - name: Terraform validate
+        env:
+          MODULE_DIR: ${{ matrix.module }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          terraform -chdir="${MODULE_DIR}" validate
+
+  # ── TFLint ───────────────────────────────────────────────────────────────────
+  tflint:
+    name: TFLint — ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - module: modules/b1c-secure-bucket
+          - module: modules/b1c-serverless-api
+          - module: modules/b1c-aurora-cluster
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Set up TFLint
+        uses: terraform-linters/setup-tflint@19a52fbac37dacb22a09518e4ef6ee234f2d4987 # v4.0.0
+        with:
+          tflint_version: latest
+
+      - name: Run TFLint
+        env:
+          MODULE_DIR: ${{ matrix.module }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tflint --chdir="${MODULE_DIR}" --format compact
+
+  # ── actionlint ───────────────────────────────────────────────────────────────
+  actionlint:
+    name: Lint GitHub Actions workflows
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Run actionlint
+        uses: reviewdog/action-actionlint@c6ee1eb0a5d47b2af53a203652b5dac0b6c4016e # v1.7.1
+        with:
+          reporter: github-pr-review
+          fail_level: error
+
+  # ── Markdown lint ────────────────────────────────────────────────────────────
+  markdown-lint:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Lint Markdown files
+        uses: DavidAnson/markdownlint-cli2-action@05f32210e84442804257b2a6f20b273450ec8265 # v17 — verify SHA before v0.1.0 release
+        with:
+          globs: "**/*.md"
