@@ -67,7 +67,7 @@ Note the `api_endpoint` output — you will use it in step 4.
 
 In your GitHub repository settings, add a repository secret:
 
-```
+```text
 Name:  AWS_DEPLOY_ROLE_ARN
 Value: arn:aws:iam::<account-id>:role/GitHubActionsRole
 ```

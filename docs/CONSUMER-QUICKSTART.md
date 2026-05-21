@@ -27,7 +27,7 @@ Before starting, verify every item in [docs/PREREQUISITES.md](./PREREQUISITES.md
 
 You have two options:
 
-**Option A — Fork the repo (recommended for evaluation)**
+### Option A — Fork the repo (recommended for evaluation)
 
 ```bash
 # Fork via the GitHub UI, then clone your fork:
@@ -35,7 +35,7 @@ git clone https://github.com/<your-org>/devops-platform
 cd devops-platform/examples/lambda-python
 ```
 
-**Option B — Copy the example into your own repo**
+### Option B — Copy the example into your own repo
 
 ```bash
 cp -r examples/lambda-python /path/to/your-repo/infra/lambda-python
@@ -180,7 +180,7 @@ Type `yes` when prompted. Apply takes roughly 30-60 seconds.
 
 At the end, note the output:
 
-```
+```text
 api_endpoint = "https://abc123def.execute-api.us-east-1.amazonaws.com"
 ```
 

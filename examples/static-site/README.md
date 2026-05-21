@@ -65,7 +65,7 @@ terraform apply
 
 Note the outputs:
 
-```
+```text
 cloudfront_domain          = "d1234abcd.cloudfront.net"
 cloudfront_distribution_id = "E1ABCDEF12345"
 bucket_name                = "example-static-site-a1b2c3d4"
@@ -77,14 +77,14 @@ In your GitHub repository settings, add:
 
 **Secret:**
 
-```
+```text
 Name:  AWS_DEPLOY_ROLE_ARN
 Value: arn:aws:iam::<account-id>:role/GitHubActionsRole
 ```
 
 **Variables:**
 
-```
+```text
 Name:  STATIC_SITE_BUCKET_NAME
 Value: <bucket_name output from terraform apply>
 

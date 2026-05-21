@@ -21,7 +21,7 @@ Direct commits to `main` are not permitted.
 
 All commits must follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
 
-```
+```text
 <type>(<scope>): <short description>
 
 [optional body]
@@ -43,7 +43,7 @@ Allowed types:
 
 Examples:
 
-```
+```text
 feat(modules): add b1c-secure-bucket module with KMS option
 fix(workflows): correct CloudFront invalidation path in aws-static-site
 docs(prerequisites): add DynamoDB table creation command
