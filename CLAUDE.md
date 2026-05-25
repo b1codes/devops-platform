@@ -9,6 +9,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Generic Terraform modules** under `modules/` (`b1c-secure-bucket`, `b1c-serverless-api`, `b1c-aurora-cluster`) consumed via `source = "github.com/B1Codes/devops-platform//modules/<name>?ref=<tag>"`.
 - **Reusable `workflow_call` GitHub Actions** under `.github/workflows/` (`aws-lambda-deploy.yml`, `aws-static-site.yml`, `terraform-plan-cost.yml`) consumed via `uses: B1Codes/devops-platform/.github/workflows/<name>.yml@<sha>`.
 
+Opt-in agent-context metadata lives under `b1/` (`b1-module.yaml` + `context/`). It is consumed by external AI-tooling that compiles per-project context files (e.g. `CLAUDE.md`) and is invisible to Terraform/Actions consumers — the `b1/` subtree is scoped so that an install pulls only the metadata, not the entire repo.
+
 A private B1Codes consumer (`llc-infra-core`, B1Codes' internal Brain layer; not publicly available — see the pointer in `README.md`) builds on top of these primitives. This repo deliberately knows nothing about that consumer — keeping it generic for *all* external consumers is the value proposition.
 
 **Status: pre-release.** `v0.1.0` has not been tagged yet. The full `[Unreleased]` section of `CHANGELOG.md` is the current truth; consult `RELEASE-CHECKLIST.md` before tagging.

@@ -1,0 +1,57 @@
+name: devops-platform
+version: 0.1.0
+type: deployment
+description: >-
+  B1Codes' open-source AWS deployment engine — generic Terraform modules
+  (b1c-secure-bucket, b1c-serverless-api, b1c-aurora-cluster) and reusable
+  workflow_call GitHub Actions (aws-lambda-deploy, aws-static-site,
+  terraform-plan-cost). Teaches agents the engine's non-negotiable
+  conventions: OIDC-only auth, SHA-pinned actions, no backend in modules,
+  and the consumer wiring pattern (workflow_call + module source by git ref).
+
+skills:
+  - name: "Module Consumer Wiring"
+    description: >-
+      Generate a consumer-side main.tf that references a devops-platform
+      module via github.com/B1Codes/devops-platform//modules/<name>?ref=<tag>,
+      including the required inputs and an examples/basic-style layout.
+
+  - name: "Caller Workflow Generator"
+    description: >-
+      Emit a .github/workflows/*.yml that calls aws-lambda-deploy.yml,
+      aws-static-site.yml, or terraform-plan-cost.yml via workflow_call,
+      with correct permissions (id-token: write), OIDC role assumption,
+      and SHA-pinned third-party actions.
+
+  - name: "OIDC Trust Auditor"
+    description: >-
+      Review a consumer's IAM role trust policy and workflow permissions
+      against the engine's OIDC-only contract. Flags long-lived AWS keys,
+      overly broad sub claims, and missing id-token permissions.
+
+  - name: "Convention Linter"
+    description: >-
+      Check changes for the four non-negotiables — no backend{} under
+      modules/, workflows pinned to 40-char SHAs, no hardcoded account
+      IDs/ARNs/regions, OIDC-only auth — before commit, matching what the
+      pre-commit hooks enforce.
+
+  - name: "Module Documentation Contract"
+    description: >-
+      For any new or modified module, verify it ships with README.md plus
+      examples/basic/main.tf, and that hand-edits stay outside the
+      terraform-docs <!-- BEGIN_TF_DOCS --> / <!-- END_TF_DOCS --> markers.
+
+commands:
+  - name: "/devops-platform new-consumer"
+    description: "Scaffold a consumer repo's main.tf + caller workflow against a chosen engine module"
+    usage: "/devops-platform new-consumer --module b1c-serverless-api --ref v0.1.0"
+
+  - name: "/devops-platform pin-actions"
+    description: "Rewrite uses: refs in .github/workflows/ to full 40-char SHAs with version comments"
+
+  - name: "/devops-platform check-conventions"
+    description: "Run the four-rule conformance check (no backend in modules, SHA pins, no hardcoded values, OIDC-only) and report violations"
+
+  - name: "/devops-platform bump-engine"
+    description: "Update a consumer repo's module source refs and workflow_call SHAs to a newer devops-platform release tag"
