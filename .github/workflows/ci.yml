@@ -49,6 +49,7 @@ jobs:
           - module: modules/aws/b1c-serverless-api
           - module: modules/aws/b1c-aurora-cluster
           - module: modules/gcp/b1c-secure-bucket
+          - module: modules/gcp/b1c-serverless-api
 
     steps:
       - name: Checkout repository
@@ -89,6 +90,7 @@ jobs:
           - module: modules/aws/b1c-serverless-api
           - module: modules/aws/b1c-aurora-cluster
           - module: modules/gcp/b1c-secure-bucket
+          - module: modules/gcp/b1c-serverless-api
 
     steps:
       - name: Checkout repository
