@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **`devops-platform`** is the public, MIT-licensed engine in B1Codes' public/private AWS infrastructure pair. It exposes two kinds of primitives that consumers reference by Git URL:
 
-- **Generic Terraform modules** under `modules/` (`b1c-secure-bucket`, `b1c-serverless-api`, `b1c-aurora-cluster`) consumed via `source = "github.com/B1Codes/devops-platform//modules/<name>?ref=<tag>"`.
+- **Generic Terraform modules** under `modules/aws/` (`b1c-secure-bucket`, `b1c-serverless-api`, `b1c-aurora-cluster`) consumed via `source = "github.com/B1Codes/devops-platform//modules/aws/<name>?ref=<tag>"`.
 - **Reusable `workflow_call` GitHub Actions** under `.github/workflows/` (`aws-lambda-deploy.yml`, `aws-static-site.yml`, `terraform-plan-cost.yml`) consumed via `uses: B1Codes/devops-platform/.github/workflows/<name>.yml@<sha>`.
 
 Opt-in agent-context metadata lives under `b1/` (`b1-module.yaml` + `context/`). It is consumed by external AI-tooling that compiles per-project context files (e.g. `CLAUDE.md`) and is invisible to Terraform/Actions consumers — the `b1/` subtree is scoped so that an install pulls only the metadata, not the entire repo.
@@ -36,12 +36,12 @@ terraform fmt -recursive                          # rewrites .tf in place
 tflint --recursive                                # lints all .tf files
 
 # Validate a single module:
-cd modules/b1c-serverless-api
+cd modules/aws/b1c-serverless-api
 terraform init -backend=false
 terraform validate
 
 # Regenerate a module README (terraform-docs runs in inject mode — see footguns):
-terraform-docs markdown table --config .terraform-docs.yml modules/b1c-secure-bucket
+terraform-docs markdown table --config .terraform-docs.yml modules/aws/b1c-secure-bucket
 ```
 
 CI (`.github/workflows/ci.yml`) runs `terraform fmt -check`, a `terraform validate` matrix per module, a `tflint` matrix per module, `actionlint`, and markdown-lint. There is no automated test suite — correctness is enforced entirely by lint, validate, and the pre-commit hooks below.

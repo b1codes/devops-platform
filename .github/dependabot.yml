@@ -37,7 +37,7 @@ updates:
 
   # ── Terraform — b1c-secure-bucket ───────────────────────────────────────────
   - package-ecosystem: "terraform"
-    directory: "/modules/b1c-secure-bucket"
+    directory: "/modules/aws/b1c-secure-bucket"
     schedule:
       interval: "weekly"
     commit-message:
@@ -50,7 +50,7 @@ updates:
 
   # ── Terraform — b1c-serverless-api ──────────────────────────────────────────
   - package-ecosystem: "terraform"
-    directory: "/modules/b1c-serverless-api"
+    directory: "/modules/aws/b1c-serverless-api"
     schedule:
       interval: "weekly"
     commit-message:
@@ -63,7 +63,7 @@ updates:
 
   # ── Terraform — b1c-aurora-cluster ──────────────────────────────────────────
   - package-ecosystem: "terraform"
-    directory: "/modules/b1c-aurora-cluster"
+    directory: "/modules/aws/b1c-aurora-cluster"
     schedule:
       interval: "weekly"
     commit-message:

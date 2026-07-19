@@ -48,7 +48,7 @@ the published module (or the relative path if you also copy the module):
 module "example_python_api" {
   # Replace with the relative path from your repo root to the module,
   # or with a registry reference once published:
-  source = "github.com/B1Codes/devops-platform//modules/b1c-serverless-api?ref=v0.1.0"
+  source = "github.com/B1Codes/devops-platform//modules/aws/b1c-serverless-api?ref=v0.1.0"
   ...
 }
 ```

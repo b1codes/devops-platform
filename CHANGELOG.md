@@ -13,17 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Terraform Modules
 
-- `modules/b1c-secure-bucket` — Opinionated S3 bucket with SSE encryption
+- `modules/aws/b1c-secure-bucket` — Opinionated S3 bucket with SSE encryption
   (SSE-S3 default, SSE-KMS optional), all public-access blocks, versioning
   enabled by default, noncurrent version lifecycle expiration, and an optional
   bucket policy for OIDC-federated role access.
 
-- `modules/b1c-serverless-api` — Lambda function wired to an HTTP API Gateway
+- `modules/aws/b1c-serverless-api` — Lambda function wired to an HTTP API Gateway
   v2 with a `$default` route, IAM execution role, CloudWatch log group with
   configurable retention, and optional extra IAM policy attachments. Auth-free
   by design; consumers layer authorization in a wrapper module.
 
-- `modules/b1c-aurora-cluster` — Aurora Serverless v2 cluster with
+- `modules/aws/b1c-aurora-cluster` — Aurora Serverless v2 cluster with
   `serverlessv2_scaling_configuration`, KMS-encrypted storage, automated
   backups, deletion protection toggle, subnet group, and security group.
   Does not create the VPC; VPC and subnet IDs are inputs.

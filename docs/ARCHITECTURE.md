@@ -92,9 +92,9 @@ consumed by the examples in this repo and by external application code.
 graph TD
     subgraph devops-platform["devops-platform (this repo)"]
         direction TB
-        M1["modules/b1c-secure-bucket"]
-        M2["modules/b1c-serverless-api"]
-        M3["modules/b1c-aurora-cluster"]
+        M1["modules/aws/b1c-secure-bucket"]
+        M2["modules/aws/b1c-serverless-api"]
+        M3["modules/aws/b1c-aurora-cluster"]
         E1["examples/lambda-python/main.tf"]
         E2["examples/static-site/main.tf"]
     end
@@ -104,11 +104,11 @@ graph TD
         A2["another-app/terraform/main.tf"]
     end
 
-    E1 -->|"source = ../../modules/b1c-serverless-api"| M2
-    E2 -->|"source = ../../modules/b1c-secure-bucket"| M1
-    A1 -->|"source = github.com/B1Codes/devops-platform//modules/b1c-serverless-api?ref=v0.1.0"| M2
-    A1 -->|"source = github.com/B1Codes/devops-platform//modules/b1c-secure-bucket?ref=v0.1.0"| M1
-    A2 -->|"source = github.com/B1Codes/devops-platform//modules/b1c-aurora-cluster?ref=v0.1.0"| M3
+    E1 -->|"source = ../../modules/aws/b1c-serverless-api"| M2
+    E2 -->|"source = ../../modules/aws/b1c-secure-bucket"| M1
+    A1 -->|"source = github.com/B1Codes/devops-platform//modules/aws/b1c-serverless-api?ref=v0.1.0"| M2
+    A1 -->|"source = github.com/B1Codes/devops-platform//modules/aws/b1c-secure-bucket?ref=v0.1.0"| M1
+    A2 -->|"source = github.com/B1Codes/devops-platform//modules/aws/b1c-aurora-cluster?ref=v0.1.0"| M3
 
     style devops-platform fill:#161b22,stroke:#30363d,color:#e6edf3
     style external fill:#0d1117,stroke:#30363d,color:#e6edf3

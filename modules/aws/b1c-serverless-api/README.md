@@ -26,7 +26,7 @@ The private `llc-infra-core/modules/tier1-serverless` module demonstrates this p
 
 ```hcl
 module "my_api" {
-  source = "github.com/B1Codes/devops-platform//modules/b1c-serverless-api?ref=v0.1.0"
+  source = "github.com/B1Codes/devops-platform//modules/aws/b1c-serverless-api?ref=v0.1.0"
 
   function_name = "my-app-api-prod"
   runtime       = "python3.12"

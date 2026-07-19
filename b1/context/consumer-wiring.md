@@ -10,7 +10,7 @@ Always pin `?ref=` to a tag or SHA — never `main`. Tag bumps are tracked in `C
 
 ```hcl
 module "site_bucket" {
-  source = "github.com/B1Codes/devops-platform//modules/b1c-secure-bucket?ref=v0.1.0"
+  source = "github.com/B1Codes/devops-platform//modules/aws/b1c-secure-bucket?ref=v0.1.0"
 
   bucket_name        = "example-static-site-${random_id.suffix.hex}"
   versioning_enabled = true
@@ -27,7 +27,7 @@ module "site_bucket" {
 
 ```hcl
 module "api" {
-  source = "github.com/B1Codes/devops-platform//modules/b1c-serverless-api?ref=v0.1.0"
+  source = "github.com/B1Codes/devops-platform//modules/aws/b1c-serverless-api?ref=v0.1.0"
 
   function_name = "example-python-api"
   runtime       = "python3.12"
@@ -46,7 +46,7 @@ This module is **auth-free** — consumers layer authorization in a wrapper (Aut
 
 ### `b1c-aurora-cluster` — minimum viable
 
-Aurora Serverless v2, KMS-encrypted storage, automated backups, deletion-protection toggle. **Does not create the VPC** — VPC and subnet IDs are inputs. See `modules/b1c-aurora-cluster/README.md` for the full input table.
+Aurora Serverless v2, KMS-encrypted storage, automated backups, deletion-protection toggle. **Does not create the VPC** — VPC and subnet IDs are inputs. See `modules/aws/b1c-aurora-cluster/README.md` for the full input table.
 
 ## Reusable workflow via `workflow_call`
 

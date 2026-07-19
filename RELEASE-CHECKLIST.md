@@ -21,9 +21,9 @@ as it is confirmed. Do not tag until all boxes are checked.
 
 - [ ] All module READMEs are up to date. Re-run terraform-docs to verify:
       ```bash
-      terraform-docs markdown table --config .terraform-docs.yml modules/b1c-secure-bucket
-      terraform-docs markdown table --config .terraform-docs.yml modules/b1c-serverless-api
-      terraform-docs markdown table --config .terraform-docs.yml modules/b1c-aurora-cluster
+      terraform-docs markdown table --config .terraform-docs.yml modules/aws/b1c-secure-bucket
+      terraform-docs markdown table --config .terraform-docs.yml modules/aws/b1c-serverless-api
+      terraform-docs markdown table --config .terraform-docs.yml modules/aws/b1c-aurora-cluster
       ```
       No diff should appear in git after running these commands.
 
