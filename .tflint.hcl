@@ -12,6 +12,16 @@ plugin "aws" {
   version = "0.32.0"
 }
 
+# The Google plugin adds GCP-specific rules (deprecated resource types,
+# invalid machine types, etc.). It is fetched automatically on first run.
+# Verify this is still the latest release before merging:
+# https://github.com/terraform-linters/tflint-ruleset-google/releases
+plugin "google" {
+  enabled = true
+  source  = "github.com/terraform-linters/tflint-ruleset-google"
+  version = "0.29.0"
+}
+
 # ---------------------------------------------------------------------------
 # Core Terraform rules
 # ---------------------------------------------------------------------------
