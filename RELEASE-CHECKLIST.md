@@ -103,9 +103,11 @@ git pull origin main
 # Create an annotated tag
 git tag -a v0.1.0 -m "v0.1.0 — initial public release
 
-Modules: b1c-secure-bucket, b1c-serverless-api, b1c-aurora-cluster
-Workflows: aws-lambda-deploy, aws-static-site, terraform-plan-cost
-Examples: lambda-python, static-site
+Modules (AWS): b1c-secure-bucket, b1c-serverless-api, b1c-aurora-cluster
+Modules (GCP): b1c-secure-bucket, b1c-serverless-api, b1c-relational-db
+Workflows (AWS): aws-lambda-deploy, aws-static-site, terraform-plan-cost
+Workflows (GCP): gcp-cloudrun-deploy, gcp-static-site
+Examples: lambda-python, static-site, gcp-cloudrun-python, gcp-static-site
 Docs: CONSUMER-QUICKSTART, ARCHITECTURE, PREREQUISITES"
 
 # Push the tag
