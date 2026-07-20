@@ -30,7 +30,7 @@ jobs:
       build_command: "true" # no build step needed — plain HTML in site/
       build_output_dir: examples/gcp-static-site/site
       bucket_name: example-static-site-REPLACE_WITH_TERRAFORM_OUTPUT
-      backend_bucket_name: example-static-site-backend
+      url_map_name: example-static-site-url-map
       gcp_project_id: my-gcp-project
     secrets:
       workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}

@@ -1,7 +1,7 @@
 # Reusable workflow: gcp-static-site.yml
 #
 # Syncs a static site build to a GCS bucket and invalidates the Cloud CDN
-# cache on the backend bucket fronting it. Mirrors aws-static-site.yml's
+# cache on the URL map fronting it. Mirrors aws-static-site.yml's
 # shape for the GCP provider.
 #
 # Usage: call this workflow with `uses:` from a consumer repo:
@@ -12,7 +12,7 @@
 #         build_command: npm run build
 #         build_output_dir: dist/
 #         bucket_name: my-site-prod
-#         backend_bucket_name: my-site-prod-backend
+#         url_map_name: my-site-prod-url-map
 #         gcp_project_id: my-gcp-project
 #       secrets:
 #         workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
@@ -33,12 +33,12 @@ on:
         description: "Name of the GCS bucket to sync the built site into."
         required: true
         type: string
-      backend_bucket_name:
-        description: "Name of the Cloud CDN-enabled backend bucket to invalidate after deployment."
+      url_map_name:
+        description: "Name of the URL map fronting the Cloud CDN-enabled backend bucket, invalidated after deployment."
         required: true
         type: string
       gcp_project_id:
-        description: "GCP project ID that owns the bucket and backend bucket."
+        description: "GCP project ID that owns the bucket and URL map."
         required: true
         type: string
       node_version:
@@ -112,19 +112,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gcloud storage rsync "${BUILD_OUTPUT_DIR}" "gs://${BUCKET_NAME}" --delete-unmatched-destination-objects
+          gcloud storage rsync "${BUILD_OUTPUT_DIR}" "gs://${BUCKET_NAME}" --recursive --delete-unmatched-destination-objects
           echo "Sync to gs://${BUCKET_NAME} complete."
 
       # ── Cloud CDN cache invalidation ─────────────────────────────────────────
       - name: Invalidate Cloud CDN cache
         env:
           PROJECT_ID: ${{ inputs.gcp_project_id }}
-          BACKEND_BUCKET_NAME: ${{ inputs.backend_bucket_name }}
+          URL_MAP_NAME: ${{ inputs.url_map_name }}
         shell: bash
         run: |
           set -euo pipefail
-          gcloud compute url-maps invalidate-cdn-cache "${BACKEND_BUCKET_NAME}" \
+          gcloud compute url-maps invalidate-cdn-cache "${URL_MAP_NAME}" \
             --project="${PROJECT_ID}" \
             --path="/*" \
             --quiet
-          echo "Cloud CDN cache invalidated for backend bucket ${BACKEND_BUCKET_NAME}."
+          echo "Cloud CDN cache invalidated for URL map ${URL_MAP_NAME}."

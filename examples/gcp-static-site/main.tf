@@ -136,6 +136,11 @@ output "bucket_name" {
 }
 
 output "backend_bucket_name" {
-  description = "Name of the Cloud CDN-enabled backend bucket. Pass this to gcp-static-site.yml as backend_bucket_name for cache invalidation."
+  description = "Name of the Cloud CDN-enabled backend bucket."
   value       = google_compute_backend_bucket.this.name
+}
+
+output "url_map_name" {
+  description = "Name of the URL map fronting the backend bucket. Pass this to gcp-static-site.yml as url_map_name for CDN cache invalidation."
+  value       = google_compute_url_map.this.name
 }
