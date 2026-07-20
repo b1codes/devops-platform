@@ -23,7 +23,7 @@ resource "random_id" "suffix" {
 # ---------------------------------------------------------------------------
 
 module "site_bucket" {
-  source = "../../modules/b1c-secure-bucket"
+  source = "../../modules/aws/b1c-secure-bucket"
 
   bucket_name        = "example-static-site-${random_id.suffix.hex}"
   versioning_enabled = true

@@ -45,9 +45,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - module: modules/b1c-secure-bucket
-          - module: modules/b1c-serverless-api
-          - module: modules/b1c-aurora-cluster
+          - module: modules/aws/b1c-secure-bucket
+          - module: modules/aws/b1c-serverless-api
+          - module: modules/aws/b1c-aurora-cluster
+          - module: modules/gcp/b1c-secure-bucket
+          - module: modules/gcp/b1c-serverless-api
+          - module: modules/gcp/b1c-relational-db
 
     steps:
       - name: Checkout repository
@@ -84,9 +87,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - module: modules/b1c-secure-bucket
-          - module: modules/b1c-serverless-api
-          - module: modules/b1c-aurora-cluster
+          - module: modules/aws/b1c-secure-bucket
+          - module: modules/aws/b1c-serverless-api
+          - module: modules/aws/b1c-aurora-cluster
+          - module: modules/gcp/b1c-secure-bucket
+          - module: modules/gcp/b1c-serverless-api
+          - module: modules/gcp/b1c-relational-db
 
     steps:
       - name: Checkout repository

@@ -30,7 +30,7 @@ For development environments, consider setting `deletion_protection = false` and
 
 ```hcl
 module "app_db" {
-  source = "github.com/B1Codes/devops-platform//modules/b1c-aurora-cluster?ref=v0.1.0"
+  source = "github.com/B1Codes/devops-platform//modules/aws/b1c-aurora-cluster?ref=v0.1.0"
 
   cluster_identifier = "my-app-db-prod"
   engine             = "aurora-postgresql"

@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **`devops-platform`** is the public, MIT-licensed engine in B1Codes' public/private AWS infrastructure pair. It exposes two kinds of primitives that consumers reference by Git URL:
 
-- **Generic Terraform modules** under `modules/` (`b1c-secure-bucket`, `b1c-serverless-api`, `b1c-aurora-cluster`) consumed via `source = "github.com/B1Codes/devops-platform//modules/<name>?ref=<tag>"`.
-- **Reusable `workflow_call` GitHub Actions** under `.github/workflows/` (`aws-lambda-deploy.yml`, `aws-static-site.yml`, `terraform-plan-cost.yml`) consumed via `uses: B1Codes/devops-platform/.github/workflows/<name>.yml@<sha>`.
+- **Generic Terraform modules** under `modules/aws/` (`b1c-secure-bucket`, `b1c-serverless-api`, `b1c-aurora-cluster`) and `modules/gcp/` (`b1c-secure-bucket`, `b1c-serverless-api`, `b1c-relational-db`), consumed via `source = "github.com/B1Codes/devops-platform//modules/<provider>/<name>?ref=<tag>"`.
+- **Reusable `workflow_call` GitHub Actions** under `.github/workflows/` (`aws-lambda-deploy.yml`, `aws-static-site.yml`, `gcp-cloudrun-deploy.yml`, `gcp-static-site.yml`, `terraform-plan-cost.yml`) consumed via `uses: B1Codes/devops-platform/.github/workflows/<name>.yml@<sha>`.
 
 Opt-in agent-context metadata lives under `b1/` (`b1-module.yaml` + `context/`). It is consumed by external AI-tooling that compiles per-project context files (e.g. `CLAUDE.md`) and is invisible to Terraform/Actions consumers — the `b1/` subtree is scoped so that an install pulls only the metadata, not the entire repo.
 
@@ -36,19 +36,19 @@ terraform fmt -recursive                          # rewrites .tf in place
 tflint --recursive                                # lints all .tf files
 
 # Validate a single module:
-cd modules/b1c-serverless-api
+cd modules/aws/b1c-serverless-api
 terraform init -backend=false
 terraform validate
 
 # Regenerate a module README (terraform-docs runs in inject mode — see footguns):
-terraform-docs markdown table --config .terraform-docs.yml modules/b1c-secure-bucket
+terraform-docs markdown table --config .terraform-docs.yml modules/aws/b1c-secure-bucket
 ```
 
 CI (`.github/workflows/ci.yml`) runs `terraform fmt -check`, a `terraform validate` matrix per module, a `tflint` matrix per module, `actionlint`, and markdown-lint. There is no automated test suite — correctness is enforced entirely by lint, validate, and the pre-commit hooks below.
 
 ## Non-negotiable conventions
 
-The first two are enforced by pre-commit hooks (commits will fail). All four are blocking in code review. Fix the root cause; do not bypass hooks.
+The first two are enforced by pre-commit hooks (commits will fail). All five are blocking in code review. Fix the root cause; do not bypass hooks.
 
 1. **No `backend {}` block under `modules/`** — enforced by the `no-backend-in-modules` pygrep hook. Modules are stateless primitives; state ownership lives only with consumers.
 
@@ -57,6 +57,8 @@ The first two are enforced by pre-commit hooks (commits will fail). All four are
 3. **No hardcoded values** — account IDs, ARNs, bucket names, region strings, secrets. Everything flows in as a Terraform variable, workflow input, or OIDC-derived credential (`CONTRIBUTING.md` §1).
 
 4. **OIDC only.** No workflow accepts `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`. AWS auth always flows through short-lived OIDC tokens via `aws-actions/configure-aws-credentials`.
+
+5. **WIF only (GCP).** No workflow accepts a GCP service-account JSON key (`credentials_json:`). GCP auth always flows through Workload Identity Federation via `google-github-actions/auth`.
 
 Module-documentation contract (`CONTRIBUTING.md`): every module under `modules/` ships with a `README.md` *and* an `examples/basic/main.tf`. PRs that add or modify a module without both will not merge.
 

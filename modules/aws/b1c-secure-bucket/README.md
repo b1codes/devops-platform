@@ -15,7 +15,7 @@ A hardened S3 bucket module that enforces encryption, blocks all public access, 
 
 ```hcl
 module "artifacts_bucket" {
-  source = "github.com/B1Codes/devops-platform//modules/b1c-secure-bucket?ref=v0.1.0"
+  source = "github.com/B1Codes/devops-platform//modules/aws/b1c-secure-bucket?ref=v0.1.0"
 
   bucket_name = "my-org-my-app-artifacts-prod"
 

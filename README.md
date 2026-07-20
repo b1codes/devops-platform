@@ -1,12 +1,12 @@
 # devops-platform
 
-Open-source AWS deployment engine: reusable GitHub Actions workflows and Terraform modules.
+Open-source AWS + GCP deployment engine: reusable GitHub Actions workflows and Terraform modules.
 
 ---
 
 ## Why this exists
 
-Most teams reinvent the same deployment scaffolding for every project — OIDC wiring, S3 state buckets, Lambda packaging steps. This repository codifies a "Golden Path": a single, opinionated set of Terraform modules and reusable GitHub Actions workflows that any project can call instead of building from scratch. It fills the gap between "I have an AWS account" and "I have a working, cost-tracked, secure CI/CD pipeline," without locking consumers into a proprietary platform.
+Most teams reinvent the same deployment scaffolding for every project — OIDC wiring, S3 state buckets, Lambda packaging steps. This repository codifies a "Golden Path": a single, opinionated set of Terraform modules and reusable GitHub Actions workflows that any project can call instead of building from scratch. It fills the gap between "I have a cloud account" and "I have a working, cost-tracked, secure CI/CD pipeline," on AWS or GCP, without locking consumers into a proprietary platform.
 
 ---
 
@@ -20,8 +20,9 @@ flowchart LR
 
     subgraph engine["devops-platform (this repo)"]
         direction TB
-        rw["Reusable Workflow\n(aws-lambda-deploy.yml\naws-static-site.yml\nterraform-plan-cost.yml)"]
-        tf["Terraform Modules\n(b1c-secure-bucket\nb1c-serverless-api\nb1c-aurora-cluster)"]
+        rw["Reusable Workflows\n(aws-lambda-deploy.yml, aws-static-site.yml,\ngcp-cloudrun-deploy.yml, gcp-static-site.yml,\nterraform-plan-cost.yml)"]
+        tfaws["modules/aws/\n(b1c-secure-bucket\nb1c-serverless-api\nb1c-aurora-cluster)"]
+        tfgcp["modules/gcp/\n(b1c-secure-bucket\nb1c-serverless-api\nb1c-relational-db)"]
     end
 
     subgraph aws["AWS"]
@@ -31,27 +32,34 @@ flowchart LR
         state["S3 State Bucket\n+ DynamoDB Lock"]
     end
 
+    subgraph gcp["GCP"]
+        wif["Workload Identity Federation\n(GitHub OIDC → GCP)"]
+        services_gcp["Cloud Run / GCS+Cloud CDN\nCloud SQL"]
+    end
+
     caller -->|"workflow_call"| rw
     rw -->|"assume role via OIDC"| oidc
     oidc --> role
     role --> services
-    tf -->|"terraform init/plan/apply"| state
-    tf --> services
+    rw -->|"authenticate via WIF"| wif
+    wif --> services_gcp
+    tfaws -->|"terraform init/plan/apply"| state
+    tfaws --> services
+    tfgcp -->|"terraform init/plan/apply"| services_gcp
 ```
 
 ---
 
 ## What's inside
 
-- **`modules/`** — Reusable Terraform building blocks:
-  - `b1c-secure-bucket` — S3 with encryption, versioning, public-access block, and optional OIDC trust.
-  - `b1c-serverless-api` — Lambda + HTTP API Gateway v2 + IAM execution role + CloudWatch log group.
-  - `b1c-aurora-cluster` — Aurora Serverless v2 with KMS encryption, subnet/security group wiring, and IAM-auth-ready outputs.
+- **`modules/`** — Reusable Terraform building blocks, split by provider:
+  - `modules/aws/` — `b1c-secure-bucket` (S3), `b1c-serverless-api` (Lambda + API Gateway v2), `b1c-aurora-cluster` (Aurora Serverless v2).
+  - `modules/gcp/` — `b1c-secure-bucket` (GCS), `b1c-serverless-api` (Cloud Run), `b1c-relational-db` (Cloud SQL).
 
 - **`.github/workflows/`** — Reusable GitHub Actions workflows (called via `workflow_call`):
-  - `aws-lambda-deploy.yml` — packages Python or Node source and deploys to Lambda via OIDC.
-  - `aws-static-site.yml` — builds a frontend, syncs to S3, and invalidates CloudFront.
-  - `terraform-plan-cost.yml` — runs `terraform plan` and posts an Infracost diff comment on pull requests.
+  - `aws-lambda-deploy.yml` / `gcp-cloudrun-deploy.yml` — packages source and deploys to Lambda / Cloud Run.
+  - `aws-static-site.yml` / `gcp-static-site.yml` — builds a frontend, syncs to S3+CloudFront / GCS+Cloud CDN.
+  - `terraform-plan-cost.yml` — runs `terraform plan` and posts an Infracost diff comment on pull requests (provider-agnostic).
 
 - **`examples/`** — Runnable end-to-end demos showing how to wire the modules and caller workflows together.
 

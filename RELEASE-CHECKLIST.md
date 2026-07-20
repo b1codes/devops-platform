@@ -21,9 +21,12 @@ as it is confirmed. Do not tag until all boxes are checked.
 
 - [ ] All module READMEs are up to date. Re-run terraform-docs to verify:
       ```bash
-      terraform-docs markdown table --config .terraform-docs.yml modules/b1c-secure-bucket
-      terraform-docs markdown table --config .terraform-docs.yml modules/b1c-serverless-api
-      terraform-docs markdown table --config .terraform-docs.yml modules/b1c-aurora-cluster
+      terraform-docs markdown table --config .terraform-docs.yml modules/aws/b1c-secure-bucket
+      terraform-docs markdown table --config .terraform-docs.yml modules/aws/b1c-serverless-api
+      terraform-docs markdown table --config .terraform-docs.yml modules/aws/b1c-aurora-cluster
+      terraform-docs markdown table --config .terraform-docs.yml modules/gcp/b1c-secure-bucket
+      terraform-docs markdown table --config .terraform-docs.yml modules/gcp/b1c-serverless-api
+      terraform-docs markdown table --config .terraform-docs.yml modules/gcp/b1c-relational-db
       ```
       No diff should appear in git after running these commands.
 
@@ -61,6 +64,13 @@ as it is confirmed. Do not tag until all boxes are checked.
       Review any hits and confirm they are not account IDs (e.g., phone
       numbers in documentation are acceptable; AWS account IDs are not).
 
+- [ ] No hardcoded GCP project/org numbers in any tracked file:
+      ```bash
+      grep -rE '"[0-9]{9,12}"' --include='*.tf' --include='*.yml' --include='*.yaml' --include='*.md'
+      ```
+      Review any hits — GCP project numbers and organization IDs are
+      typically 9-12 digit numeric strings.
+
 - [ ] No B1Codes-specific references in `modules/` or `.github/workflows/`
       other than attribution comments:
       ```bash
@@ -93,9 +103,11 @@ git pull origin main
 # Create an annotated tag
 git tag -a v0.1.0 -m "v0.1.0 — initial public release
 
-Modules: b1c-secure-bucket, b1c-serverless-api, b1c-aurora-cluster
-Workflows: aws-lambda-deploy, aws-static-site, terraform-plan-cost
-Examples: lambda-python, static-site
+Modules (AWS): b1c-secure-bucket, b1c-serverless-api, b1c-aurora-cluster
+Modules (GCP): b1c-secure-bucket, b1c-serverless-api, b1c-relational-db
+Workflows (AWS): aws-lambda-deploy, aws-static-site, terraform-plan-cost
+Workflows (GCP): gcp-cloudrun-deploy, gcp-static-site
+Examples: lambda-python, static-site, gcp-cloudrun-python, gcp-static-site
 Docs: CONSUMER-QUICKSTART, ARCHITECTURE, PREREQUISITES"
 
 # Push the tag

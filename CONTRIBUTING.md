@@ -119,6 +119,10 @@ tflint --recursive
 pre-commit run --all-files
 ```
 
+### Provider version pinning
+
+AWS modules pin `hashicorp/aws ~> 5.0`; GCP modules pin `hashicorp/google ~> 6.0`. When adding a new module, match the major version already in use by its sibling modules for that provider unless you have a specific reason to bump — check `versions.tf` in an existing module under the same `modules/<provider>/` directory.
+
 Install prerequisites:
 
 ```bash

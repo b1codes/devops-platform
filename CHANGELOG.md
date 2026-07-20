@@ -13,20 +13,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Terraform Modules
 
-- `modules/b1c-secure-bucket` — Opinionated S3 bucket with SSE encryption
+- `modules/aws/b1c-secure-bucket` — Opinionated S3 bucket with SSE encryption
   (SSE-S3 default, SSE-KMS optional), all public-access blocks, versioning
   enabled by default, noncurrent version lifecycle expiration, and an optional
   bucket policy for OIDC-federated role access.
 
-- `modules/b1c-serverless-api` — Lambda function wired to an HTTP API Gateway
+- `modules/aws/b1c-serverless-api` — Lambda function wired to an HTTP API Gateway
   v2 with a `$default` route, IAM execution role, CloudWatch log group with
   configurable retention, and optional extra IAM policy attachments. Auth-free
   by design; consumers layer authorization in a wrapper module.
 
-- `modules/b1c-aurora-cluster` — Aurora Serverless v2 cluster with
+- `modules/aws/b1c-aurora-cluster` — Aurora Serverless v2 cluster with
   `serverlessv2_scaling_configuration`, KMS-encrypted storage, automated
   backups, deletion protection toggle, subnet group, and security group.
   Does not create the VPC; VPC and subnet IDs are inputs.
+
+- `modules/gcp/b1c-secure-bucket` — Opinionated GCS bucket with encryption,
+  versioning, public access prevention, and optional Workload Identity
+  Federation IAM binding.
+
+- `modules/gcp/b1c-serverless-api` — Cloud Run v2 service with a dedicated
+  runtime service account and configurable autoscaling.
+
+- `modules/gcp/b1c-relational-db` — Cloud SQL instance with private IP,
+  CMEK-optional encryption, and automated backups.
 
 #### Reusable GitHub Actions Workflows
 
@@ -41,6 +51,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `build_command`, `build_output_dir`, `bucket_name`,
   `cloudfront_distribution_id`, `aws_region`, optional `node_version` and
   `wait_for_invalidation`.
+
+- `.github/workflows/gcp-cloudrun-deploy.yml` — Deploys a Cloud Run service
+  from source via Workload Identity Federation.
+
+- `.github/workflows/gcp-static-site.yml` — Builds a frontend, syncs to
+  GCS, and invalidates Cloud CDN.
 
 - `.github/workflows/terraform-plan-cost.yml` — Runs `terraform plan` and
   `infracost breakdown`, then posts a cost diff comment on the pull request.

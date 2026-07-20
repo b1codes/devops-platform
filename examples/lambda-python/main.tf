@@ -10,7 +10,7 @@
 # ---------------------------------------------------------------------------
 
 module "example_python_api" {
-  source = "../../modules/b1c-serverless-api"
+  source = "../../modules/aws/b1c-serverless-api"
 
   function_name = "example-python-api"
   runtime       = "python3.12"

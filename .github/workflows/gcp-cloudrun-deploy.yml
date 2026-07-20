@@ -1,0 +1,110 @@
+# Reusable workflow: gcp-cloudrun-deploy.yml
+#
+# Deploys a Cloud Run service directly from source using Cloud Run's
+# buildpacks-based source deploy, authenticated via Workload Identity
+# Federation. Mirrors aws-lambda-deploy.yml's shape for the GCP provider.
+#
+# Usage: call this workflow with `uses:` from a consumer repo:
+#   jobs:
+#     deploy:
+#       uses: B1Codes/devops-platform/.github/workflows/gcp-cloudrun-deploy.yml@v0.1.0
+#       with:
+#         service_name: my-app-prod
+#         gcp_project_id: my-gcp-project
+#         gcp_region: us-central1
+#         source_dir: src/
+#       secrets:
+#         workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+#         service_account: ${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+on:
+  workflow_call:
+    inputs:
+      service_name:
+        description: "Name of the Cloud Run service to deploy."
+        required: true
+        type: string
+      gcp_project_id:
+        description: "GCP project ID that owns the Cloud Run service."
+        required: true
+        type: string
+      gcp_region:
+        description: "GCP region where the Cloud Run service lives (e.g. us-central1)."
+        required: true
+        type: string
+      source_dir:
+        description: "Path to the directory containing the service source code (built via Cloud Run buildpacks)."
+        required: true
+        type: string
+      allow_unauthenticated:
+        description: "Pass --allow-unauthenticated to the deploy command. Defaults to false (authenticated-only), matching the b1c-serverless-api module's default."
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      workload_identity_provider:
+        description: "Full resource name of the Workload Identity Federation provider (e.g. projects/123/locations/global/workloadIdentityPools/github/providers/github)."
+        required: true
+      service_account:
+        description: "Email of the GCP service account to impersonate for deployment."
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy Cloud Run — ${{ inputs.service_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      # ── GCP auth (Workload Identity Federation) ─────────────────────────────
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ secrets.workload_identity_provider }}
+          service_account: ${{ secrets.service_account }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      # ── Deploy ───────────────────────────────────────────────────────────────
+      - name: Deploy to Cloud Run from source
+        id: deploy
+        env:
+          SERVICE_NAME: ${{ inputs.service_name }}
+          PROJECT_ID: ${{ inputs.gcp_project_id }}
+          REGION: ${{ inputs.gcp_region }}
+          SOURCE_DIR: ${{ inputs.source_dir }}
+          ALLOW_UNAUTH: ${{ inputs.allow_unauthenticated }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTH_FLAG="--no-allow-unauthenticated"
+          if [[ "${ALLOW_UNAUTH}" == "true" ]]; then
+            AUTH_FLAG="--allow-unauthenticated"
+          fi
+          gcloud run deploy "${SERVICE_NAME}" \
+            --project="${PROJECT_ID}" \
+            --region="${REGION}" \
+            --source="${SOURCE_DIR}" \
+            "${AUTH_FLAG}" \
+            --quiet \
+            --format=json \
+            | tee /tmp/deploy-result.json
+          SERVICE_URL=$(jq -r '.status.url' /tmp/deploy-result.json)
+          echo "service_url=${SERVICE_URL}" >> "${GITHUB_OUTPUT}"
+
+      - name: Report deployed URL
+        env:
+          SERVICE_NAME: ${{ inputs.service_name }}
+          SERVICE_URL: ${{ steps.deploy.outputs.service_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Cloud Run service '${SERVICE_NAME}' deployed at ${SERVICE_URL}."
