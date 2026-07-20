@@ -1,0 +1,37 @@
+# Caller workflow: deploy the example static site on every push to main.
+#
+# This workflow calls the reusable gcp-static-site.yml from this repo.
+# The bucket, backend bucket, load balancer, and managed SSL certificate
+# must already exist (created by terraform apply against examples/gcp-static-site/main.tf).
+#
+# Required GitHub Actions secrets in this repo:
+#   GCP_WIF_PROVIDER            -- Workload Identity Federation provider resource name.
+#   GCP_DEPLOY_SERVICE_ACCOUNT  -- Service account email GitHub Actions impersonates.
+#   See docs/PREREQUISITES.md for setup instructions.
+#
+# NOTE: The uses: line below references @main for simplicity in this example.
+# In production, pin to a specific release tag or commit SHA.
+
+name: Deploy example static site (GCS + Cloud CDN)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "examples/gcp-static-site/site/**"
+      - "examples/gcp-static-site/.github/workflows/deploy.yml"
+
+jobs:
+  deploy:
+    name: Deploy static site
+    uses: B1Codes/devops-platform/.github/workflows/gcp-static-site.yml@main
+    with:
+      build_command: "true" # no build step needed — plain HTML in site/
+      build_output_dir: examples/gcp-static-site/site
+      bucket_name: example-static-site-REPLACE_WITH_TERRAFORM_OUTPUT
+      backend_bucket_name: example-static-site-backend
+      gcp_project_id: my-gcp-project
+    secrets:
+      workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+      service_account: ${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}

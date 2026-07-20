@@ -1,0 +1,130 @@
+# Reusable workflow: gcp-static-site.yml
+#
+# Syncs a static site build to a GCS bucket and invalidates the Cloud CDN
+# cache on the backend bucket fronting it. Mirrors aws-static-site.yml's
+# shape for the GCP provider.
+#
+# Usage: call this workflow with `uses:` from a consumer repo:
+#   jobs:
+#     deploy:
+#       uses: B1Codes/devops-platform/.github/workflows/gcp-static-site.yml@v0.1.0
+#       with:
+#         build_command: npm run build
+#         build_output_dir: dist/
+#         bucket_name: my-site-prod
+#         backend_bucket_name: my-site-prod-backend
+#         gcp_project_id: my-gcp-project
+#       secrets:
+#         workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+#         service_account: ${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+on:
+  workflow_call:
+    inputs:
+      build_command:
+        description: "Shell command used to build the site (e.g. 'npm run build')."
+        required: true
+        type: string
+      build_output_dir:
+        description: "Directory produced by the build command that should be synced to GCS."
+        required: true
+        type: string
+      bucket_name:
+        description: "Name of the GCS bucket to sync the built site into."
+        required: true
+        type: string
+      backend_bucket_name:
+        description: "Name of the Cloud CDN-enabled backend bucket to invalidate after deployment."
+        required: true
+        type: string
+      gcp_project_id:
+        description: "GCP project ID that owns the bucket and backend bucket."
+        required: true
+        type: string
+      node_version:
+        description: "Node.js version to install for the build step."
+        required: false
+        type: string
+        default: "20"
+    secrets:
+      workload_identity_provider:
+        description: "Full resource name of the Workload Identity Federation provider."
+        required: true
+      service_account:
+        description: "Email of the GCP service account to impersonate for deployment."
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy static site to GCS + Cloud CDN
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@0a44ba7841725637a19e28fa30b79a866c81b0a6 # v4.0.4
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: "npm"
+
+      - name: Install npm dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f "package-lock.json" ]]; then
+            echo "Found package-lock.json — using 'npm ci'."
+            npm ci
+          else
+            echo "No package-lock.json — using 'npm install'."
+            npm install
+          fi
+
+      - name: Build site
+        env:
+          BUILD_CMD: ${{ inputs.build_command }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval "${BUILD_CMD}"
+
+      # ── GCP auth (Workload Identity Federation) ─────────────────────────────
+      - name: Authenticate to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ secrets.workload_identity_provider }}
+          service_account: ${{ secrets.service_account }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      # ── Sync to GCS ──────────────────────────────────────────────────────────
+      - name: Sync to GCS
+        env:
+          BUILD_OUTPUT_DIR: ${{ inputs.build_output_dir }}
+          BUCKET_NAME: ${{ inputs.bucket_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud storage rsync "${BUILD_OUTPUT_DIR}" "gs://${BUCKET_NAME}" --delete-unmatched-destination-objects
+          echo "Sync to gs://${BUCKET_NAME} complete."
+
+      # ── Cloud CDN cache invalidation ─────────────────────────────────────────
+      - name: Invalidate Cloud CDN cache
+        env:
+          PROJECT_ID: ${{ inputs.gcp_project_id }}
+          BACKEND_BUCKET_NAME: ${{ inputs.backend_bucket_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud compute url-maps invalidate-cdn-cache "${BACKEND_BUCKET_NAME}" \
+            --project="${PROJECT_ID}" \
+            --path="/*" \
+            --quiet
+          echo "Cloud CDN cache invalidated for backend bucket ${BACKEND_BUCKET_NAME}."
