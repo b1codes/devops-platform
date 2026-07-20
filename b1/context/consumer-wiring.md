@@ -95,7 +95,7 @@ Quick reference for the five workflows:
 | `aws-lambda-deploy.yml` | Package + deploy Lambda via OIDC | `function_name`, `aws_region`, `runtime` (`python`/`node`), `source_dir` |
 | `aws-static-site.yml` | Build, S3 sync `--delete`, CloudFront invalidation | `build_command`, `build_output_dir`, `bucket_name`, `cloudfront_distribution_id`, `aws_region` |
 | `gcp-cloudrun-deploy.yml` | Deploy to Cloud Run from source via WIF | `service_name`, `gcp_project_id`, `gcp_region`, `source_dir` |
-| `gcp-static-site.yml` | Build, GCS sync, Cloud CDN invalidation | `build_command`, `build_output_dir`, `bucket_name`, `backend_bucket_name`, `gcp_project_id` |
+| `gcp-static-site.yml` | Build, GCS sync, Cloud CDN invalidation | `build_command`, `build_output_dir`, `bucket_name`, `url_map_name`, `gcp_project_id` |
 | `terraform-plan-cost.yml` | `terraform plan` + Infracost diff on PRs | PR-only — see [[footguns]] |
 
 For exhaustive input lists, read the `inputs:` block at the top of each workflow file.
