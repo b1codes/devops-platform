@@ -30,25 +30,36 @@ This approach has two concrete benefits:
 
 ### Layer 1 — Terraform Modules (`modules/`)
 
-Modules are reusable building blocks that provision AWS resources. Each module
-accepts variables, creates resources, and exposes outputs. Modules have no
-`backend {}` block — state management is always the consumer's responsibility.
+Modules are reusable building blocks that provision cloud resources. Each
+module accepts variables, creates resources, and exposes outputs. Modules
+have no `backend {}` block — state management is always the consumer's
+responsibility.
 
-Current modules:
+Modules are organized by provider: `modules/aws/` and `modules/gcp/`. Module
+names stay identical across providers where the abstraction genuinely maps
+1:1 (`b1c-secure-bucket`, `b1c-serverless-api`); where it doesn't, the GCP
+module is named for the actual product rather than reusing an AWS brand
+name (`b1c-relational-db`, not `b1c-aurora-cluster`).
 
-| Module | What it creates |
-|---|---|
-| `b1c-secure-bucket` | S3 bucket with encryption, versioning, public-access blocks |
-| `b1c-serverless-api` | Lambda + API Gateway v2 + IAM execution role + CloudWatch log group |
-| `b1c-aurora-cluster` | Aurora Serverless v2 cluster with KMS encryption and subnet group |
+| Module | Provider | What it creates |
+|---|---|---|
+| `modules/aws/b1c-secure-bucket` | AWS | S3 bucket with encryption, versioning, public-access blocks |
+| `modules/aws/b1c-serverless-api` | AWS | Lambda + API Gateway v2 + IAM execution role + CloudWatch log group |
+| `modules/aws/b1c-aurora-cluster` | AWS | Aurora Serverless v2 cluster with KMS encryption and subnet group |
+| `modules/gcp/b1c-secure-bucket` | GCP | GCS bucket with encryption, versioning, public-access prevention |
+| `modules/gcp/b1c-serverless-api` | GCP | Cloud Run v2 service + dedicated runtime service account |
+| `modules/gcp/b1c-relational-db` | GCP | Cloud SQL instance with private IP, CMEK-optional encryption |
 
 ### Layer 2 — Reusable Workflows (`.github/workflows/`)
 
 Reusable workflows (`workflow_call`) are the CI/CD primitive. A consumer repo
 adds a 10-15 line caller workflow that passes inputs (function name, region,
-source directory) and a single OIDC role secret. The reusable workflow handles
-checkout, runtime setup, dependency installation, packaging, AWS auth, and
-deployment.
+source directory) and a single cloud credential secret. The reusable workflow
+handles checkout, runtime setup, dependency installation, packaging, cloud
+auth, and deployment. `gcp-cloudrun-deploy.yml` and `gcp-static-site.yml`
+exist alongside their AWS counterparts (`aws-lambda-deploy.yml`,
+`aws-static-site.yml`) and follow the same shape, but authenticate via
+Workload Identity Federation rather than OIDC role assumption.
 
 This separation means infrastructure shape (Terraform) and deployment
 mechanics (GitHub Actions) are independently evolvable.
@@ -127,3 +138,7 @@ graph TD
 - **OIDC only.** No workflow accepts a static `AWS_ACCESS_KEY_ID` or
   `AWS_SECRET_ACCESS_KEY`. All AWS authentication flows through short-lived
   OIDC tokens.
+- **WIF only (GCP).** No GCP-facing workflow accepts a static service-account
+  JSON key. All GCP authentication flows through Workload Identity
+  Federation via `google-github-actions/auth` — the GCP equivalent of the
+  OIDC-only rule above.

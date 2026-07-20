@@ -24,6 +24,9 @@ as it is confirmed. Do not tag until all boxes are checked.
       terraform-docs markdown table --config .terraform-docs.yml modules/aws/b1c-secure-bucket
       terraform-docs markdown table --config .terraform-docs.yml modules/aws/b1c-serverless-api
       terraform-docs markdown table --config .terraform-docs.yml modules/aws/b1c-aurora-cluster
+      terraform-docs markdown table --config .terraform-docs.yml modules/gcp/b1c-secure-bucket
+      terraform-docs markdown table --config .terraform-docs.yml modules/gcp/b1c-serverless-api
+      terraform-docs markdown table --config .terraform-docs.yml modules/gcp/b1c-relational-db
       ```
       No diff should appear in git after running these commands.
 
@@ -60,6 +63,13 @@ as it is confirmed. Do not tag until all boxes are checked.
       ```
       Review any hits and confirm they are not account IDs (e.g., phone
       numbers in documentation are acceptable; AWS account IDs are not).
+
+- [ ] No hardcoded GCP project/org numbers in any tracked file:
+      ```bash
+      grep -rE '"[0-9]{9,12}"' --include='*.tf' --include='*.yml' --include='*.yaml' --include='*.md'
+      ```
+      Review any hits — GCP project numbers and organization IDs are
+      typically 9-12 digit numeric strings.
 
 - [ ] No B1Codes-specific references in `modules/` or `.github/workflows/`
       other than attribution comments:
