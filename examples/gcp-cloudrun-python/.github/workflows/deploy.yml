@@ -1,0 +1,40 @@
+# Caller workflow: deploy the example-python-api Cloud Run service on every
+# push to main.
+#
+# This workflow calls the reusable gcp-cloudrun-deploy.yml from this repo.
+# Cloud Run builds the image from source via buildpacks on every deploy —
+# there is no separate Terraform-managed image reference to keep in sync.
+#
+# Required GitHub Actions secrets in this repo:
+#   GCP_WIF_PROVIDER            -- Workload Identity Federation provider resource name.
+#   GCP_DEPLOY_SERVICE_ACCOUNT  -- Service account email GitHub Actions impersonates.
+#   See docs/PREREQUISITES.md for setup instructions.
+#
+# NOTE: The uses: line below references @main for simplicity in this example.
+# In production, pin to a specific release tag or commit SHA:
+#   uses: B1Codes/devops-platform/.github/workflows/gcp-cloudrun-deploy.yml@v0.1.0
+
+name: Deploy example-python-api (Cloud Run)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "examples/gcp-cloudrun-python/src/**"
+      - "examples/gcp-cloudrun-python/Procfile"
+      - "examples/gcp-cloudrun-python/.github/workflows/deploy.yml"
+
+jobs:
+  deploy:
+    name: Deploy Cloud Run service
+    uses: B1Codes/devops-platform/.github/workflows/gcp-cloudrun-deploy.yml@main
+    with:
+      service_name: example-python-api
+      gcp_project_id: my-gcp-project
+      gcp_region: us-central1
+      source_dir: examples/gcp-cloudrun-python
+      allow_unauthenticated: true
+    secrets:
+      workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+      service_account: ${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}
