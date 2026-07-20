@@ -5,6 +5,7 @@ A Cloud SQL instance with private-IP connectivity, optional CMEK disk encryption
 ## Features
 
 - **Private IP only** — `ipv4_enabled = false`; the module provisions the private-services-access VPC peering range Cloud SQL private IP requires. Does not create the VPC itself.
+- **TLS enforced on all connections** — `ssl_mode = "ENCRYPTED_ONLY"` rejects unencrypted client connections. Fixed, non-configurable security default (not exposed as a variable), matching the AWS module's non-optional encryption posture.
 - **Storage autoscaling** — `disk_autoresize` (default `true`) is the closest Cloud SQL equivalent to Aurora's automatic storage scaling.
 - **Documented parity gap** — Cloud SQL has no serverless *compute* autoscaling equivalent to Aurora Serverless v2. `tier` picks a fixed machine size.
 - **Encryption** — Google-managed by default; switch to CMEK by passing `kms_key_name`.
