@@ -70,20 +70,29 @@ resource "aws_db_subnet_group" "this" {
 # ---------------------------------------------------------------------------
 # Security group
 # Ingress is restricted to specific security groups — no CIDR ingress by default.
+# Egress is restricted to the cluster's own VPC — no open-to-internet egress
+# by default. Aurora rarely needs to initiate outbound connections itself;
+# consumers relying on AWS service integrations that require internet-bound
+# egress (e.g. S3 export/import) should route through VPC endpoints or add
+# their own additional security group rules in a wrapper module.
 # ---------------------------------------------------------------------------
+
+data "aws_vpc" "this" {
+  id = var.vpc_id
+}
 
 resource "aws_security_group" "this" {
   name        = "${var.cluster_identifier}-sg"
-  description = "Security group for Aurora cluster ${var.cluster_identifier}. Ingress allowed from approved security groups on port ${local.effective_port} only."
+  description = "Security group for Aurora cluster ${var.cluster_identifier}. Ingress allowed from approved security groups on port ${local.effective_port} only; egress restricted to the cluster's VPC."
   vpc_id      = var.vpc_id
 
-  # Egress: allow all (standard for stateful RDS resources).
+  # Egress: restricted to the cluster's own VPC CIDR, not the open internet.
   egress {
-    description = "Allow all outbound traffic"
+    description = "Allow outbound traffic within the cluster's VPC only"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [data.aws_vpc.this.cidr_block]
   }
 
   tags = merge(var.tags, {

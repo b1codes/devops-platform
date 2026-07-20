@@ -9,7 +9,7 @@ An Aurora Serverless v2 cluster module that provisions a production-ready relati
 - **KMS encryption** — module creates a CMK with rotation enabled when `kms_key_arn` is not provided; or reuses an existing key.
 - **RDS-managed master password** — AWS Secrets Manager stores and rotates the master password automatically when `manage_master_user_password = true` (default). No plaintext password in Terraform state.
 - **IAM database authentication** — `iam_database_authentication_enabled = true` by default, enabling token-based auth for applications using IAM roles.
-- **Least-privilege security group** — ingress is granted only to specific security group IDs passed via `allowed_security_group_ids`. No CIDR-based ingress is added.
+- **Least-privilege security group** — ingress is granted only to specific security group IDs passed via `allowed_security_group_ids`. No CIDR-based ingress is added. Egress is restricted to the cluster's own VPC CIDR (looked up via `var.vpc_id`) rather than the open internet; consumers who need the database to reach AWS services over the internet (e.g. S3 export/import without a VPC endpoint) should route through VPC endpoints or add additional security group rules in a wrapper module.
 - **Deletion protection** — enabled by default (`deletion_protection = true`). Set to `false` only for ephemeral environments.
 - **Bring your own VPC** — the module does NOT create a VPC, subnets, or routing. Pass `vpc_id` and `subnet_ids` from your root module.
 

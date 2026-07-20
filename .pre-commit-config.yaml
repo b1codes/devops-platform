@@ -62,7 +62,9 @@ repos:
         language: pygrep
         entry: '^\s*backend\s'
         files: '^modules/.*\.tf$'
-        args: [--negate]  # fail when the pattern IS found
+        # No --negate: pygrep already fails when the pattern IS found, which
+        # is exactly what this hook needs. --negate would invert that to
+        # fail only when the pattern is absent — the opposite of the intent.
 
       # Fail if any workflow in .github/workflows/ uses a reusable workflow
       # reference that is not pinned to a full 40-character commit SHA.
